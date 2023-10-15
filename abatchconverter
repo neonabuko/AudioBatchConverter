@@ -26,7 +26,6 @@ to_format_files=()
 file_found=false
 for file in ./*; do
   filename=$(basename -- "$file")
-  echo $filename
   for VAR in "${audio_formats_filtered[@]}"; do
     if [[ "$filename" == *.$VAR ]]; then
       to_format_files+=("$file")
@@ -52,7 +51,7 @@ else
     filename=$(basename -- "$VAR")
     ffpb -i "$VAR" "${filename%.*}.$output_format" -y && rm $VAR
     original_file_name=$(basename "$VAR")
-    echo "\n${GREEN}✔ Converted $original_file_name to "${filename%.*}.$output_format" ${RESET}\n"
+    echo "${GREEN}✔ Converted $original_file_name to "${filename%.*}.$output_format" ${RESET}\n"
   done
 fi
 
