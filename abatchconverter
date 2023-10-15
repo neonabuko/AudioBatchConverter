@@ -1,31 +1,32 @@
 #!/usr/bin/zsh
 
+# desired output format
 output_format="$1"
 
 GREEN='\033[0;32m'
 RESET='\033[0m'
 
-
+# usage help
 if [ -z "$output_format" ]; then
   echo "Usage: $0 <output_format>"
   exit 1
 fi
 
-to_format_files=()
-audio_formats=("mp4" "avi" "mkv" "mov" "flv" "mpg" "wmv" "ogg" "oga" "wav" "mp3")
+# create audio_formats_filtered without output_format, so we don't convert files to themselves
+audio_formats=("flac" "mp4" "avi" "mkv" "mov" "flv" "mpg" "wmv" "ogg" "oga" "wav" "mp3")
 audio_formats_filtered=()
-file_found=false
-
 for VAR in "${audio_formats[@]}"; do
   if [ "$VAR" != "$output_format" ]; then
     audio_formats_filtered+=("$VAR")
   fi
 done
 
+# find all files in . matching any format in audio_formats_filtered and add to to_format_files
+to_format_files=()
+file_found=false
 for file in ./*; do
   filename=$(basename -- "$file")
-  filename_noext="${filename%.*}"
-  
+  echo $filename
   for VAR in "${audio_formats_filtered[@]}"; do
     if [[ "$filename" == *.$VAR ]]; then
       to_format_files+=("$file")
@@ -50,7 +51,8 @@ else
   for VAR in "${to_format_files[@]}"; do
     filename=$(basename -- "$VAR")
     ffpb -i "$VAR" "${filename%.*}.$output_format" -y && rm $VAR
-    echo "\n${GREEN}✔ Converted $VAR ${RESET}\n"
+    original_file_name=$(basename "$VAR")
+    echo "\n${GREEN}✔ Converted $original_file_name to "${filename%.*}.$output_format" ${RESET}\n"
   done
 fi
 
@@ -58,7 +60,7 @@ end_time=$(date +%s.%N)
 elapsed_time=$(echo "$end_time - $start_time" | bc -l)
 if (( $(echo "$elapsed_time > 60" | bc -l) )); then
   elapsed_time=$(echo "scale=2; $elapsed_time / 60" | bc)
-  printf "$file_count files converted in %.1f minutes\n" "$elapsed_time"
+  printf "Converted $file_count files in %.1f minutes\n" "$elapsed_time"
 else
-  printf "$file_count files converted in %.1f seconds\n" "$elapsed_time"
+  printf "Converted $file_count files in %.1f seconds\n" "$elapsed_time"
 fi
