@@ -1,0 +1,64 @@
+#!/usr/bin/zsh
+
+output_format="$1"
+
+GREEN='\033[0;32m'
+RESET='\033[0m'
+
+
+if [ -z "$output_format" ]; then
+  echo "Usage: $0 <output_format>"
+  exit 1
+fi
+
+to_format_files=()
+audio_formats=("mp4" "avi" "mkv" "mov" "flv" "mpg" "wmv" "ogg" "oga" "wav" "mp3")
+audio_formats_filtered=()
+file_found=false
+
+for VAR in "${audio_formats[@]}"; do
+  if [ "$VAR" != "$output_format" ]; then
+    audio_formats_filtered+=("$VAR")
+  fi
+done
+
+for file in ./*; do
+  filename=$(basename -- "$file")
+  filename_noext="${filename%.*}"
+  
+  for VAR in "${audio_formats_filtered[@]}"; do
+    if [[ "$filename" == *.$VAR ]]; then
+      to_format_files+=("$file")
+      file_found=true
+    fi
+  done
+done
+
+if [ "$file_found" = false ]; then
+  echo "\nNo non-$output_format files found."
+  exit
+else
+  echo "\nFound non-$output_format files:"
+  start_time=$(date +%s.%N)
+  file_count="${#to_format_files[@]}"
+  
+  for VAR in "${to_format_files[@]}"; do
+    echo "   -" $(basename -- "$VAR")
+  done
+
+  echo "\nConverting files...\n"
+  for VAR in "${to_format_files[@]}"; do
+    filename=$(basename -- "$VAR")
+    ffpb -i "$VAR" "${filename%.*}.$output_format" -y && rm $VAR
+    echo "\n${GREEN}✔ Converted $VAR ${RESET}\n"
+  done
+fi
+
+end_time=$(date +%s.%N)
+elapsed_time=$(echo "$end_time - $start_time" | bc -l)
+if (( $(echo "$elapsed_time > 60" | bc -l) )); then
+  elapsed_time=$(echo "scale=2; $elapsed_time / 60" | bc)
+  printf "$file_count files converted in %.1f minutes\n" "$elapsed_time"
+else
+  printf "$file_count files converted in %.1f seconds\n" "$elapsed_time"
+fi
